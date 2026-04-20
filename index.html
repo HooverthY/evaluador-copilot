@@ -101,43 +101,59 @@
 
             const recommendation = getRecommendation();
 
-           const generateExecutiveSummary = async () => {
+const generateExecutiveSummary = async () => {
                 if (!isComplete) return;
                 setIsGenerating(true);
                 setAiError('');
                 setAiSummary('');
                 setCopied(false);
 
-                // Coloca tu clave API aquí abajo
-                const apiKey = "AIzaSyBXWChaEWrX56QVIT5iB8ZvnzeJHZKmN6Q"; 
+                // RECUERDA: Pon aquí tu clave real AIza...
+                const apiKey = "TU_API_KEY_AQUÍ"; 
 
-                const prompt = `Actúa como un consultor de transformación digital. Escribe un resumen ejecutivo persuasivo (máximo 2 párrafos) para el CFO de una PYME colombiana sobre la inversión en Copilot.
-                Contexto: Recomendación: ${recommendation.level}, Usuarios: ${powerUsers}, Inversión: ${new Intl.NumberFormat('es-CO').format(annualCostCOP)} COP.`;
+                const prompt = `Actúa como un experto en tecnología de Microsoft. Genera un resumen ejecutivo persuasivo para el CFO de una empresa colombiana. 
+                Datos para el resumen:
+                - Recomendación: ${recommendation.level}
+                - Usuarios clave: ${powerUsers}
+                - Inversión anual estimada: ${new Intl.NumberFormat('es-CO').format(annualCostCOP)} COP.
+                Explica brevemente por qué Copilot es una inversión estratégica ante los cambios de licenciamiento de 2026.`;
 
                 try {
-                    // CORRECCIÓN: Usamos el modelo gemini-1.5-flash que es el correcto
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                    // CAMBIO A V1: Es la versión estable y evita errores 404 de la beta
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
                         body: JSON.stringify({
-                            contents: [{ parts: [{ text: prompt }] }]
+                            contents: [{
+                                parts: [{
+                                    text: prompt
+                                }]
+                            }]
                         })
                     });
 
-                    if (!response.ok) throw new Error('Error en la API');
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error("Detalle del error de Google:", errorData);
+                        throw new Error(errorData.error?.message || 'Error en la API');
+                    }
 
                     const data = await response.json();
-                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-                    if (text) {
-                        setAiSummary(text);
+                    if (aiText) {
+                        setAiSummary(aiText);
                     } else {
-                        throw new Error('Respuesta vacía');
+                        throw new Error('La IA no devolvió texto');
                     }
                 } catch (error) {
-                    setAiError('Error de conexión con la IA. Verifica tu API Key.');
+                    console.error("Error completo:", error);
+                    setAiError(`Error: ${error.message}. Verifica tu API Key.`);
+                } finally {
+                    setIsGenerating(false);
                 }
-                setIsGenerating(false);
             };
 
             const fallbackCopy = (text) => {
