@@ -101,33 +101,22 @@
 
             const recommendation = getRecommendation();
 
-            const generateExecutiveSummary = async () => {
+           const generateExecutiveSummary = async () => {
                 if (!isComplete) return;
                 setIsGenerating(true);
                 setAiError('');
                 setAiSummary('');
                 setCopied(false);
 
-                // ATENCIÓN: Para que esto funcione en GitHub Pages, debes reemplazar esto con tu propia clave API de Google AI Studio.
-                // Ve a: https://aistudio.google.com/app/apikey para obtener una gratuita.
+                // Coloca tu clave API aquí abajo
                 const apiKey = "AIzaSyBXWChaEWrX56QVIT5iB8ZvnzeJHZKmN6Q"; 
 
-                if(apiKey === "AIzaSyBXWChaEWrX56QVIT5iB8ZvnzeJHZKmN6Q") {
-                    setAiError("Para activar la inteligencia artificial en la web pública, el desarrollador debe ingresar una clave API válida de Gemini en el código fuente.");
-                    setIsGenerating(false);
-                    return;
-                }
-
-                const prompt = `Actúa como un consultor de transformación digital. Escribe un breve resumen ejecutivo persuasivo (máximo 2 párrafos) para el Gerente Financiero (CFO) de una PYME colombiana.
-                Contexto de la empresa tras la evaluación:
-                - Recomendación del sistema: ${recommendation.level} (Puntaje de necesidad: ${score}/4)
-                - Usuarios críticos (Power Users): ${powerUsers}
-                - Inversión anual estimada: ${new Intl.NumberFormat('es-CO').format(annualCostCOP)} COP (Tasa representativa usada: ${trm}).
-
-                Instrucciones: Redacta un texto profesional justificando si deberían o no adquirir las licencias de 'Acceso Prioritario' de Microsoft Copilot basándote en los datos dados. Sé estratégico, resalta el retorno de inversión (ROI) frente al flujo de caja, y usa un tono corporativo. No uses saludos formales genéricos ni te inventes nombres.`;
+                const prompt = `Actúa como un consultor de transformación digital. Escribe un resumen ejecutivo persuasivo (máximo 2 párrafos) para el CFO de una PYME colombiana sobre la inversión en Copilot.
+                Contexto: Recomendación: ${recommendation.level}, Usuarios: ${powerUsers}, Inversión: ${new Intl.NumberFormat('es-CO').format(annualCostCOP)} COP.`;
 
                 try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                    // CORRECCIÓN: Usamos el modelo gemini-1.5-flash que es el correcto
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -135,7 +124,7 @@
                         })
                     });
 
-                    if (!response.ok) throw new Error('API Error');
+                    if (!response.ok) throw new Error('Error en la API');
 
                     const data = await response.json();
                     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -143,23 +132,12 @@
                     if (text) {
                         setAiSummary(text);
                     } else {
-                        throw new Error('Respuesta inválida');
+                        throw new Error('Respuesta vacía');
                     }
                 } catch (error) {
-                    setAiError('Hubo un problema al generar el resumen. Por favor, revisa tu API Key o intenta más tarde.');
+                    setAiError('Error de conexión con la IA. Verifica tu API Key.');
                 }
                 setIsGenerating(false);
-            };
-
-            const handleCopy = () => {
-                if (navigator.clipboard && window.isSecureContext) {
-                    navigator.clipboard.writeText(aiSummary).then(() => {
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                    }).catch(() => fallbackCopy(aiSummary));
-                } else {
-                    fallbackCopy(aiSummary);
-                }
             };
 
             const fallbackCopy = (text) => {
